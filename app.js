@@ -10,6 +10,8 @@ var fs = require("fs"),
   errorhandler = require("errorhandler"),
   mongoose = require("mongoose");
 
+require("./config/passport");
+
 var isProduction = process.env.NODE_ENV === "production";
 
 // Create global app object
