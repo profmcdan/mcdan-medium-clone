@@ -2,14 +2,15 @@ var fs = require("fs"),
   http = require("http"),
   path = require("path"),
   methods = require("methods"),
+  mongoose = require("mongoose"),
   express = require("express"),
   bodyParser = require("body-parser"),
   session = require("express-session"),
   cors = require("cors"),
   passport = require("passport"),
-  errorhandler = require("errorhandler"),
-  mongoose = require("mongoose");
+  errorhandler = require("errorhandler");
 
+const User = require("./models/User");
 require("./config/passport");
 
 var isProduction = process.env.NODE_ENV === "production";
@@ -48,9 +49,10 @@ if (isProduction) {
     { useNewUrlParser: true }
   );
   mongoose.set("debug", true);
+  mongoose.set("useFindAndModify", false);
 }
 
-const users = require("./models/User");
+// const users = require("./models/User");
 app.use(require("./routes"));
 
 /// catch 404 and forward to error handler
