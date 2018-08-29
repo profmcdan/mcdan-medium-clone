@@ -36,7 +36,7 @@ const ArticleSchema = new Schema(
 
 ArticleSchema.plugin(uniqueValidator, { message: "is already taken" });
 
-ArticleSchema.methods.slugify = () => {
+ArticleSchema.methods.createSlug = () => {
   this.slug =
     slugify(this.title) +
     "-" +
@@ -59,11 +59,11 @@ ArticleSchema.methods.toJSONFor = user => {
 };
 
 // Let this get called at save time
-ArticleSchema.pre("validate", next => {
-  if (!this.slug) {
-    this.slugify();
-  }
-  next();
-});
+// ArticleSchema.pre("validate", next => {
+//   if (!this.slug) {
+//     this.createSlug();
+//   }
+//   next();
+// });
 
 module.exports = Article = mongoose.model("articles", ArticleSchema);
