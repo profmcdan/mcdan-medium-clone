@@ -141,32 +141,4 @@ router.get(
   }
 );
 
-router.put(
-  "/current",
-  passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    User.findById(req.user.id)
-      .then(user => {
-        if (!user) {
-          return res.sendStatus(401);
-        }
-        const { username, bio } = req.body;
-        if (typeof username !== "undefined") {
-          user.username = username;
-        }
-
-        if (typeof bio !== "undefined") {
-          user.bio = bio;
-        }
-
-        user.save().then(() => {
-          return res.json({ user });
-        });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  }
-);
-
 module.exports = router;
