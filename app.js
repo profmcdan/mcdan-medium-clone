@@ -10,7 +10,6 @@ var fs = require("fs"),
   passport = require("passport"),
   errorhandler = require("errorhandler");
 
-const User = require("./models/User");
 require("./config/passport");
 
 var isProduction = process.env.NODE_ENV === "production";
