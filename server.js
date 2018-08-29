@@ -6,6 +6,8 @@ const path = require("path");
 
 const users = require("./routes/api/users");
 const profiles = require("./routes/api/profile");
+const articles = require("./routes/api/articles");
+
 const app = express();
 
 // Body Parser Middleware
@@ -39,6 +41,7 @@ require("./config/passport")(passport);
 // Use Routes
 app.use("/api/auth", users);
 app.use("/api/profile", profiles);
+app.use("/api/articles", articles);
 
 const port = process.env.PORT || 5000;
 
