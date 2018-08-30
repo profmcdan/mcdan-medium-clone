@@ -93,15 +93,21 @@ router.post(
             { user: req.user.id },
             { $set: profileFields },
             { new: true }
-          ).then(profile => res.json(profile));
-        } else {
-          // Create
-          Profile.findOne({ user: req.user.id }).then(profile => {
-            if (profile) {
-              errors.user = "profile already exist";
-              res.status(400).json(errors);
-            }
+          ).then(profile => {
+            return res.json(profile);
           });
+        } else {
+          // Create new profile
+          const newProfile = new Profile({
+            bio: req.body.bio,
+            website: req.body.website,
+            user: req.user.id
+          });
+
+          newProfile.save().then(profile => {
+            return res.json(profile);
+          });
+
           // new Profile(profileFields).save().then(profile => res.json(profile));
         }
       })

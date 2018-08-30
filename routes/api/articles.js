@@ -134,4 +134,35 @@ router.put(
   }
 );
 
+// @route   DELETE api/article/:slug
+// @desc    Delete Article
+// @access  Private
+router.delete(
+  "/:slug",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const errors = {};
+    Article.findOne({ slug: req.params.slug })
+      .then(article => {
+        if (!article) {
+          return res.status(404).json({ errors: "article not found" });
+        }
+
+        if (article.author.toString() !== req.user.id.toString()) {
+          errors.denied = "You are not authorized to delete this article";
+          return res.status(401).json(errors);
+        }
+        Article.findOneAndRemove({ slug: req.params.slug }).then(article => {
+          return res.json({
+            success: true,
+            deleted: article
+          });
+        });
+      })
+      .catch(err => {
+        return res.status(404).json({ errors: "article not found" });
+      });
+  }
+);
+
 module.exports = router;
