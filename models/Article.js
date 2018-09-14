@@ -25,12 +25,14 @@ const ArticleSchema = new Schema(
     favoritesCount: {
       type: String
     },
-    tagList: {
-      type: String
-    },
+    tagList: [
+      {
+        type: String
+      }
+    ],
     author: {
       type: Schema.Types.ObjectId,
-      ref: "users"
+      ref: "User"
     },
     favorited: {
       type: String
@@ -43,14 +45,14 @@ const ArticleSchema = new Schema(
 
 ArticleSchema.plugin(uniqueValidator, { message: "is already taken" });
 
-ArticleSchema.methods.createSlug = () => {
+ArticleSchema.methods.slugify = function() {
   this.slug =
     slugify(this.title) +
     "-" +
-    ((Math.random() * Math.pow(36, 6)) | 0).toString();
+    ((Math.random() * Math.pow(36, 6)) | 0).toString(36);
 };
 
-ArticleSchema.methods.toJSONFor = user => {
+ArticleSchema.methods.toJSONFor = function() {
   return {
     slug: this.slug,
     title: this.title,
@@ -60,10 +62,9 @@ ArticleSchema.methods.toJSONFor = user => {
     updatedAt: this.updatedAt,
     tagList: this.tagList,
     favoritesCount: this.favoritesCount,
-    author: user,
-    favorited: user ? user.isFavorite(this._id) : false
+    author: this.author.toProfileJSONFor()
+    // favored: user ? user.isFavorite(this._id) : false
   };
-  // author: this.author.toProfileJSONFor(user)
 };
 
 ArticleSchema.methods.updateFavoriteCount = function() {
@@ -79,11 +80,11 @@ ArticleSchema.methods.updateFavoriteCount = function() {
 };
 
 // Let this get called at save time
-// ArticleSchema.pre("validate", next => {
-//   if (!this.slug) {
-//     this.createSlug();
-//   }
-//   next();
-// });
+ArticleSchema.pre("validate", function(next) {
+  if (!this.slug) {
+    this.slugify();
+  }
+  next();
+});
 
-module.exports = Article = mongoose.model("articles", ArticleSchema);
+module.exports = Article = mongoose.model("Article", ArticleSchema);
