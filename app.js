@@ -1,4 +1,4 @@
-var fs = require("fs"),
+const fs = require("fs"),
   http = require("http"),
   path = require("path"),
   methods = require("methods"),
@@ -50,6 +50,7 @@ if (isProduction) {
   mongoose.set("debug", true);
   mongoose.set("useFindAndModify", false);
 }
+require("./models/User");
 
 // const users = require("./models/User");
 app.use(require("./routes"));

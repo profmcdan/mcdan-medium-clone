@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const uniqueValidator = require("mongoose-unique-validator");
-var slugify = require("slugify");
+const slugify = require("slugify");
+
+const User = require("./User");
 
 // Create Schema
 const ArticleSchema = new Schema(
@@ -29,8 +31,13 @@ const ArticleSchema = new Schema(
     author: {
       type: Schema.Types.ObjectId,
       ref: "users"
-    }
+    },
+    favorited: {
+      type: String
+    },
+    comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "comments" }]
   },
+
   { timestamps: true }
 );
 
@@ -53,9 +60,22 @@ ArticleSchema.methods.toJSONFor = user => {
     updatedAt: this.updatedAt,
     tagList: this.tagList,
     favoritesCount: this.favoritesCount,
-    author: user
+    author: user,
+    favorited: user ? user.isFavorite(this._id) : false
   };
   // author: this.author.toProfileJSONFor(user)
+};
+
+ArticleSchema.methods.updateFavoriteCount = function() {
+  var article = this;
+
+  return User.count({ favorites: { $in: [article._id] } }).then(function(
+    count
+  ) {
+    article.favoritesCount = count;
+
+    return article.save();
+  });
 };
 
 // Let this get called at save time

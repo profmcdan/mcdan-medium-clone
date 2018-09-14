@@ -165,4 +165,92 @@ router.delete(
   }
 );
 
+// @route   POST api/article/upvote/:slug
+// @desc    Upvote an article
+// @access  Private
+router.post(
+  "/upvote/:slug",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const errors = {};
+    User.findById(req.user.id)
+      .then(user => {
+        if (!user) {
+          errors.nouser = "User not found";
+          return res.status(404).json(errors);
+        }
+        Article.findOne({ slug: req.params.slug })
+          .then(article => {
+            if (!article) {
+              errors.noarticle = "Article not found";
+              return res.status(404).json(errors);
+            }
+            // Update the user.
+            user.favorite(article.id);
+            user
+              .save()
+              .then(usr => {
+                return res.json(usr);
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          })
+          .catch(err => {
+            errors.noarticle = "Article not found";
+            return res.status(404).json(errors);
+          });
+      })
+      .catch(err => {
+        errors.nouser = "User not found";
+        return res.status(404).json(errors);
+      });
+  }
+);
+
+// @route   POST api/article/favorite/:slug
+// @desc    Upvote an article
+// @access  Private
+router.post(
+  "/:slug/favorite",
+  passport.authenticate("jwt", { session: false }),
+  function(req, res) {
+    User.findById(req.user.id)
+      .then(function(user) {
+        if (!user) {
+          return res.sendStatus(401);
+        }
+
+        Article.findOne({ slug: req.params.slug })
+          .then(article => {
+            if (!article) {
+              return res.status(404).json({ notfound: "article not found" });
+            }
+
+            return user
+              .favorite(article.id)
+              .then(function() {
+                return article
+                  .updateFavoriteCount()
+                  .then(function(article) {
+                    return res.json({ article: article.toJSONFor(user) });
+                  })
+                  .catch(err => {
+                    return res.status(401).json({ error: err });
+                  });
+              })
+              .catch(err => {
+                return res.status(401).json({ error: err });
+              });
+          })
+          .catch(err => {
+            return res.status(404).json({ notfound: "article not found" });
+          });
+      })
+      .catch(err => {
+        return res.status(401).json({ error: err });
+      });
+  }
+);
+
 module.exports = router;
