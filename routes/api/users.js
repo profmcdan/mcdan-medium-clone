@@ -50,6 +50,14 @@ router.post("/login", (req, res, next) => {
 // @desc  Get logged in user
 // @route GET /api/auth/users
 // Private
+router.get(
+  "/me",
+  passport.authenticate("local", { session: false }),
+  (req, res) => {
+    res.json({ id: req.user.id, username: req.user.username });
+  }
+);
+
 router.get("/", auth.required, (req, res, next) => {
   User.findById(req.payload.id)
     .then(user => {

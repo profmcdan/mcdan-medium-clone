@@ -71,4 +71,15 @@ UserSchema.methods.toAuthJSON = function() {
   };
 };
 
+UserSchema.methods.toProfileJSONFor = function() {
+  return {
+    username: this.username,
+    bio: this.bio,
+    image:
+      this.image ||
+      "https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+    following: false
+  };
+};
+
 module.exports = User = mongoose.model("User", UserSchema);
