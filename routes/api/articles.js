@@ -146,4 +146,58 @@ router.delete(
   }
 );
 
+// @desc Favorite an article
+// @route POST /api/articles/:slug/favorite
+// Private
+router.post(
+  "/:article/favorite",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    var articleId = req.article._id;
+
+    User.findById(req.user.id)
+      .then(function(user) {
+        if (!user) {
+          return res.status(401).json({ notFound: "User not found" });
+        }
+
+        return user.favorite(articleId).then(() => {
+          return req.article.updateFavoriteCount().then(article => {
+            return res.json({ article: article.toJSONFor(user) });
+          });
+        });
+      })
+      .catch(err => {
+        res.status(500).json({ error: err });
+      });
+  }
+);
+
+// @desc UnFavorite an article
+// @route DELETE /api/articles/:slug/favorite
+// Private
+router.delete(
+  "/:article/favorite",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    var articleId = req.article._id;
+
+    User.findById(req.user.id)
+      .then(user => {
+        if (!user) {
+          return res.status(401).json({ notFound: "User not found" });
+        }
+
+        return user.unfavorite(articleId).then(() => {
+          return req.article.updateFavoriteCount().then(article => {
+            return res.json({ article: article.toJSONFor(user) });
+          });
+        });
+      })
+      .catch(err => {
+        res.status(500).json({ error: err });
+      });
+  }
+);
+
 module.exports = router;

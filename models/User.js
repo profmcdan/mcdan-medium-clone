@@ -28,7 +28,8 @@ const UserSchema = new mongoose.Schema(
     bio: String,
     image: String,
     hash: String,
-    salt: String
+    salt: String,
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Article" }]
   },
   { timestamps: true }
 );
@@ -86,8 +87,28 @@ UserSchema.methods.toProfileJSONFor = function() {
     image:
       this.image ||
       "https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-    following: false
+    following: this.favorites
   };
+};
+
+UserSchema.methods.favorite = function(id) {
+  if (this.favorites.indexOf(id) === -1) {
+    this.favorites.push(id);
+  }
+  return this.save();
+};
+
+UserSchema.methods.unfavorite = function(id) {
+  if (this.favorites.indexOf(id) !== -1) {
+    this.favorites.remove(id);
+  }
+  return this.save();
+};
+
+UserSchema.methods.isFavorite = function(id) {
+  return this.favorites.some(function(favoriteId) {
+    return favoriteId.toString() === id.toString();
+  });
 };
 
 module.exports = User = mongoose.model("User", UserSchema);

@@ -52,7 +52,7 @@ ArticleSchema.methods.slugify = function() {
     ((Math.random() * Math.pow(36, 6)) | 0).toString();
 };
 
-ArticleSchema.methods.toJSONFor = function() {
+ArticleSchema.methods.toJSONFor = function(user) {
   return {
     slug: this.slug,
     title: this.title,
@@ -62,19 +62,28 @@ ArticleSchema.methods.toJSONFor = function() {
     updatedAt: this.updatedAt,
     tagList: this.tagList,
     favoritesCount: this.favoritesCount,
-    author: this.author.toProfileJSONFor()
-    // favored: user ? user.isFavorite(this._id) : false
+    author: this.author.toProfileJSONFor(),
+    favorited: user ? user.isFavorite(this._id) : false
   };
 };
 
 ArticleSchema.methods.updateFavoriteCount = function() {
-  var article = this;
+  const article = this;
 
   return User.count({ favorites: { $in: [article._id] } }).then(function(
     count
   ) {
     article.favoritesCount = count;
 
+    return article.save();
+  });
+};
+
+ArticleSchema.methods.updateFavoriteCount = function() {
+  var article = this;
+
+  return User.count({ favorites: { $in: [article._id] } }).then(count => {
+    article.favoritesCount = count;
     return article.save();
   });
 };
