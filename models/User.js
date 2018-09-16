@@ -22,6 +22,9 @@ const UserSchema = new mongoose.Schema(
       match: [/\S+@\S+\.\S+/, "is invalid"],
       index: true
     },
+    name: String,
+    googleId: String,
+    githubId: String,
     bio: String,
     image: String,
     hash: String,
@@ -51,6 +54,11 @@ UserSchema.methods.generateJWT = function() {
   const exp = new Date(today);
   exp.setDate(today.getDate() + 60);
 
+  const payload = {
+    id: this._id,
+    username: this.username,
+    exp: parseInt(exp.getTime() / 1000)
+  };
   return jwt.sign(
     {
       id: this._id,
@@ -65,7 +73,7 @@ UserSchema.methods.toAuthJSON = function() {
   return {
     username: this.username,
     email: this.email,
-    token: this.generateJWT(),
+    token: "Bearer " + this.generateJWT(),
     bio: this.bio,
     image: this.image
   };

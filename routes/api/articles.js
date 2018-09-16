@@ -1,33 +1,57 @@
 const mongoose = require("mongoose");
 const router = require("express").Router();
 const passport = require("passport");
+const slugify = require("slugify");
 const User = mongoose.model("User");
 const auth = require("../auth");
-const Article = mongoose.model("Article");
+const Article = require("../../models/Article");
+
+const validateArticleInputs = require("../../validation/articles");
 
 // @desc Create Article
 // @route POST /api/articles/
-// Public
-router.post("/", (req, res) => {
-  User.findById(req.payload.id).then(user => {
-    if (!user) {
-      return res.status(401).json({ error: "Access Denied" });
+// Private
+router.post(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const { errors, isValid } = validateArticleInputs(req.body);
+    // Check Validation
+    if (!isValid) {
+      return res.status(400).json(errors);
     }
-    const newArticle = new Article({
-      title: req.body.title,
-      body: req.body.body,
-      description: req.body.description
-    });
 
-    newArticle.author = user;
-    return newArticle
-      .save()
-      .then(() => {
-        return res.json({ article: newArticle.toJSONFor() });
-      })
-      .catch(err => {
-        return res.status(500).json({ error: "Unable to save" });
+    const { title, body, description, tagList } = req.body;
+    User.findById(req.user.id).then(user => {
+      if (!user) {
+        return res.status(401).json({ error: "Access Denied" });
+      }
+      const newArticle = new Article({
+        title,
+        body,
+        description,
+        tagList
       });
+
+      newArticle.author = user;
+      return newArticle
+        .save()
+        .then(() => {
+          return res.json({ article: newArticle.toJSONFor() });
+        })
+        .catch(err => {
+          return res.status(500).json({ error: "Unable to save" });
+        });
+    });
+  }
+);
+
+router.get("/all", (req, res) => {
+  Article.find().then(articles => {
+    if (!articles) {
+      return res.status(404).json({ notfound: "Articles not found" });
+    }
+    return res.json({ articles });
   });
 });
 
@@ -50,9 +74,9 @@ router.param("article", function(req, res, next, slug) {
 // @desc Read Article
 // @route GET /api/articles/:slug
 // Public
-router.get("/:article", auth.optional, function(req, res, next) {
+router.get("/:article", (req, res, next) => {
   Promise.all([
-    req.payload ? User.findById(req.payload.id) : null,
+    req.user ? User.findById(req.user.id) : null,
     req.article.populate("author").execPopulate()
   ])
     .then(function(results) {
@@ -65,47 +89,61 @@ router.get("/:article", auth.optional, function(req, res, next) {
 
 // @desc Update Article
 // @route PUT /api/articles/:slug
-// Public
-router.put("/:article", auth.required, function(req, res, next) {
-  User.findById(req.payload.id).then(function(user) {
-    if (req.article.author._id.toString() === req.payload.id.toString()) {
-      if (typeof req.body.article.title !== "undefined") {
-        req.article.title = req.body.article.title;
-      }
+// Private
+router.put(
+  "/:article",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    User.findById(req.user.id).then(function(user) {
+      if (req.article.author._id.toString() === req.user.id.toString()) {
+        if (typeof req.body.title !== "undefined") {
+          req.article.title = req.body.title;
+        }
 
-      if (typeof req.body.article.description !== "undefined") {
-        req.article.description = req.body.article.description;
-      }
+        if (typeof req.body.description !== "undefined") {
+          req.article.description = req.body.description;
+        }
 
-      if (typeof req.body.article.body !== "undefined") {
-        req.article.body = req.body.article.body;
-      }
+        if (typeof req.body.body !== "undefined") {
+          req.article.body = req.body.body;
+        }
 
-      req.article
-        .save()
-        .then(function(article) {
-          return res.json({ article: article.toJSONFor(user) });
-        })
-        .catch(next);
-    } else {
-      return res.sendStatus(403);
-    }
-  });
-});
+        const slug =
+          slugify(req.article.title) +
+          "-" +
+          ((Math.random() * Math.pow(36, 6)) | 0).toString(16);
+        req.article.slug = slug;
+
+        req.article
+          .save()
+          .then(function(article) {
+            return res.json({ article: article.toJSONFor(user) });
+          })
+          .catch(next);
+      } else {
+        return res.sendStatus(403);
+      }
+    });
+  }
+);
 
 // @desc Delete Article
 // @route DELETE /api/articles/:slug
-// Public
-router.delete("/:article", auth.required, function(req, res, next) {
-  User.findById(req.payload.id).then(function() {
-    if (req.article.author._id.toString() === req.payload.id.toString()) {
-      return req.article.remove().then(function() {
-        return res.sendStatus(204);
-      });
-    } else {
-      return res.sendStatus(403);
-    }
-  });
-});
+// Private
+router.delete(
+  "/:article",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    User.findById(req.user.id).then(function() {
+      if (req.article.author._id.toString() === req.user.id.toString()) {
+        return req.article.remove().then(function() {
+          return res.status(204).json({ success: true });
+        });
+      } else {
+        return res.status(403).json({ notFound: "Article does not exists" });
+      }
+    });
+  }
+);
 
 module.exports = router;

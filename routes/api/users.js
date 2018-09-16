@@ -34,17 +34,36 @@ router.post("/login", (req, res, next) => {
     return res.status(422).json({ errors: { password: "cant be blank" } });
   }
 
-  passport.authenticate("local", { session: false }, (err, user, info) => {
-    if (err) {
-      return next(err);
+  User.findOne({ email: req.body.email }).then(user => {
+    if (!user) {
+      return res.status(404).json({ notfound: "User not found" });
     }
-    if (user) {
+    if (user.validPassword(req.body.password)) {
       user.token = user.generateJWT();
       return res.json({ user: user.toAuthJSON() });
     } else {
-      return res.status(422).json(info);
+      return res.status(401).json({ password: "Invalid Password" });
     }
-  })(req, res, next);
+  });
+});
+
+// @desc Logout  User
+// @route POST /api/auth/users/logout
+// Public
+router.get("/logout", (req, res) => {
+  // [TODO] -- Handle with passport
+  req.logout();
+  res.redirect("/");
+});
+
+// Auth with google
+router.get("/google", passport.authenticate("google", { scope: ["profile"] }));
+
+// Callback route for google to redirect to
+router.get("/google/redirect", passport.authenticate("google"), (req, res) => {
+  // [TODO] -- Process the returned code
+  res.json({ user: req.user });
+  // res.redirect("/profile");
 });
 
 // @desc  Get logged in user
@@ -52,55 +71,63 @@ router.post("/login", (req, res, next) => {
 // Private
 router.get(
   "/me",
-  passport.authenticate("local", { session: false }),
+  passport.authenticate("jwt", { session: false }),
   (req, res) => {
-    res.json({ id: req.user.id, username: req.user.username });
+    return res.json({ user: req.user.toProfileJSONFor() });
   }
 );
 
-router.get("/", auth.required, (req, res, next) => {
-  User.findById(req.payload.id)
-    .then(user => {
-      if (!user) {
-        return res.sendStatus(401);
-      }
-      return res.json({ user: user.toAuthJSON() });
-    })
-    .catch(next);
-});
+router.get(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    User.findById(req.payload.id)
+      .then(user => {
+        if (!user) {
+          return res.sendStatus(401);
+        }
+        return res.json({ user: user.toAuthJSON() });
+      })
+      .catch(next);
+  }
+);
 
 // @desc  Update user info
 // @route PUT /api/auth/users
 // Private
-router.put("/", auth.required, (req, res, next) => {
-  User.findById(req.payload.id)
-    .then(user => {
-      if (!user) {
-        return res.sendStatus(401);
-      }
+router.put(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  (req, res, next) => {
+    User.findById(req.payload.id)
+      .then(user => {
+        if (!user) {
+          return res.sendStatus(401);
+        }
 
-      // only update fields that were actually passed...
-      if (typeof req.body.username !== "undefined") {
-        user.username = req.body.username;
-      }
-      if (typeof req.body.email !== "undefined") {
-        user.email = req.body.email;
-      }
-      if (typeof req.body.bio !== "undefined") {
-        user.bio = req.body.bio;
-      }
-      if (typeof req.body.image !== "undefined") {
-        user.image = req.body.image;
-      }
-      if (typeof req.body.password !== "undefined") {
-        user.setPassword(req.body.password);
-      }
+        // only update fields that were actually passed...
+        if (typeof req.body.username !== "undefined") {
+          user.username = req.body.username;
+        }
+        if (typeof req.body.email !== "undefined") {
+          user.email = req.body.email;
+        }
+        if (typeof req.body.bio !== "undefined") {
+          user.bio = req.body.bio;
+        }
+        if (typeof req.body.image !== "undefined") {
+          user.image = req.body.image;
+        }
+        if (typeof req.body.password !== "undefined") {
+          user.setPassword(req.body.password);
+        }
 
-      return user.save().then(() => {
-        return res.json({ user: user.toAuthJSON() });
-      });
-    })
-    .catch(next);
-});
+        return user.save().then(() => {
+          return res.json({ user: user.toProfileJSONFor() });
+        });
+      })
+      .catch(next);
+  }
+);
 
 module.exports = router;

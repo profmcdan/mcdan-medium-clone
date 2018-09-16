@@ -49,7 +49,7 @@ ArticleSchema.methods.slugify = function() {
   this.slug =
     slugify(this.title) +
     "-" +
-    ((Math.random() * Math.pow(36, 6)) | 0).toString(36);
+    ((Math.random() * Math.pow(36, 6)) | 0).toString();
 };
 
 ArticleSchema.methods.toJSONFor = function() {
