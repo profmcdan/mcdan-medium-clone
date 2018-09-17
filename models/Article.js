@@ -37,7 +37,7 @@ const ArticleSchema = new Schema(
     favorited: {
       type: String
     },
-    comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "comments" }]
+    comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }]
   },
 
   { timestamps: true }
@@ -63,7 +63,8 @@ ArticleSchema.methods.toJSONFor = function(user) {
     tagList: this.tagList,
     favoritesCount: this.favoritesCount,
     author: this.author.toProfileJSONFor(),
-    favorited: user ? user.isFavorite(this._id) : false
+    favorited: user ? user.isFavorite(this._id) : false,
+    comments: this.comments
   };
 };
 

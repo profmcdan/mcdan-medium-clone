@@ -29,7 +29,8 @@ const UserSchema = new mongoose.Schema(
     image: String,
     hash: String,
     salt: String,
-    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Article" }]
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Article" }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
   },
   { timestamps: true }
 );
@@ -80,14 +81,15 @@ UserSchema.methods.toAuthJSON = function() {
   };
 };
 
-UserSchema.methods.toProfileJSONFor = function() {
+UserSchema.methods.toProfileJSONFor = function(user) {
   return {
     username: this.username,
     bio: this.bio,
     image:
       this.image ||
       "https://images.pexels.com/photos/248797/pexels-photo-248797.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-    following: this.favorites
+    favorites: this.favorites,
+    following: user ? user.isFollowing(this._id) : false
   };
 };
 
@@ -108,6 +110,25 @@ UserSchema.methods.unfavorite = function(id) {
 UserSchema.methods.isFavorite = function(id) {
   return this.favorites.some(function(favoriteId) {
     return favoriteId.toString() === id.toString();
+  });
+};
+
+UserSchema.methods.follow = function(id) {
+  if (this.following.indexOf(id) === -1) {
+    this.following.push(id);
+  }
+
+  return this.save();
+};
+
+UserSchema.methods.unfollow = function(id) {
+  this.following.remove(id);
+  return this.save();
+};
+
+UserSchema.methods.isFollowing = function(id) {
+  return this.following.some(function(followId) {
+    return followId.toString() === id.toString();
   });
 };
 

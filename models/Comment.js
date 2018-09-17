@@ -4,8 +4,8 @@ const Schema = mongoose.Schema;
 const CommentSchema = new Schema(
   {
     body: String,
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
-    article: { type: mongoose.Schema.Types.ObjectId, ref: "articles" }
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    article: { type: mongoose.Schema.Types.ObjectId, ref: "Article" }
   },
   { timestamps: true }
 );
@@ -14,7 +14,9 @@ CommentSchema.methods.toJSONFor = function(user) {
   return {
     id: this._id,
     body: this.body,
-    author: this.author.toProfileJSONFor(user)
+    createdAt: this.createdAt,
+    author: this.author.toProfileJSONFor()
   };
 };
-module.exports = Comment = mongoose.model("comments", CommentSchema);
+
+module.exports = Comment = mongoose.model("Comment", CommentSchema);

@@ -7,6 +7,7 @@ const path = require("path");
 const usersRoutes = require("./routes/api");
 const profilesRoutes = require("./routes/api/profiles");
 const articlesRoute = require("./routes/api/articles");
+const tagRoutes = require("./routes/api/tags");
 
 const app = express();
 
@@ -42,6 +43,7 @@ require("./config/passport");
 app.use("/api/auth", usersRoutes);
 app.use("/api/profiles", profilesRoutes);
 app.use("/api/articles", articlesRoute);
+app.use("/api/tags", tagRoutes);
 
 const port = process.env.PORT || 5000;
 
